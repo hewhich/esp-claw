@@ -11,3 +11,41 @@ peripherals:
         data0_io_num: 11
         sclk_io_num: 12
         max_transfer_sz: 4800    # 240 * 2 * 10 (10 lines RGB565)
+
+  # I2S audio: MAX98357A amp (out) + INMP441 mic (in) on one I2S port 0.
+  # BCLK=IO4, WS=IO5, DOUT=IO6 (to amp), DIN=IO3 (from mic), MCLK unused.
+  - name: i2s_audio_out
+    type: i2s
+    role: slave
+    format: std-out
+    config: &bt_audio_i2s_config
+      port: 0
+      sample_rate_hz: 16000
+      clk_src: I2S_CLK_SRC_DEFAULT
+      mclk_multiple: 256
+      data_bit_width: 32
+      slot_bit_width: I2S_SLOT_BIT_WIDTH_AUTO
+      slot_mode: I2S_SLOT_MODE_STEREO
+      slot_mask: I2S_STD_SLOT_BOTH
+      ws_width: 32
+      ws_pol: false
+      bit_shift: true
+      left_align: true
+      big_endian: false
+      bit_order_lsb: false
+      pins:
+        mclk: -1
+        bclk: 4
+        ws: 5
+        dout: 6
+        din: 3
+      invert_flags:
+        mclk_inv: false
+        bclk_inv: false
+        ws_inv: false
+
+  - name: i2s_audio_in
+    type: i2s
+    role: slave
+    format: std-in
+    config: *bt_audio_i2s_config

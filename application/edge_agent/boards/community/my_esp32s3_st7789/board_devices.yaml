@@ -1,6 +1,37 @@
 version: 1.0.0
 # Devices Configuration for my_esp32s3_st7789
 devices:
+  # Audio DAC (MAX98357A I2S class-D amp) + ADC (INMP441 I2S mic) - no codec chip, pure I2S
+  # BCLK=IO4, WS=IO5, DOUT=IO6 (-> MAX98357A DIN), DIN=IO3 (<- INMP441 SD), MCLK=none
+  - name: audio_dac
+    chip: internal
+    type: audio_codec
+    version: default
+    config:
+      adc_enabled: false
+      dac_enabled: true
+      dac_max_channel: 2
+      dac_channel_mask: "11"
+      dac_init_gain: 0
+      mclk_enabled: false
+    peripherals:
+      - name: i2s_audio_out
+
+  - name: audio_adc
+    chip: internal
+    type: audio_codec
+    version: default
+    config:
+      adc_enabled: true
+      dac_enabled: false
+      adc_max_channel: 2
+      adc_channel_mask: "11"
+      adc_channel_labels: [FC, RE]
+      adc_init_gain: 0
+      mclk_enabled: false
+    peripherals:
+      - name: i2s_audio_in
+
   # SPI Display Device (ST7789 240x320 portrait, 2.4 inch module)
   # SCLK=IO12, MOSI=IO11, CS=IO10, DC=IO9, RST=IO8, BL=IO7
   - name: display_lcd

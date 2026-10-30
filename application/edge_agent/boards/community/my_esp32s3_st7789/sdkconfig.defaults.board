@@ -2,3 +2,8 @@ CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
 CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_OCT=y
 CONFIG_SPIRAM_SPEED_80M=y
+
+# I2S audio without a codec chip (INMP441 mic + MAX98357A amp).
+# chip=internal maps to esp_codec_dev's dummy codec.
+CONFIG_CODEC_DUMMY_SUPPORT=y
+CONFIG_ESP_BOARD_PERIPH_I2S_SUPPORT=y
