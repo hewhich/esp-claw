@@ -1,0 +1,13 @@
+version: 1.0.0
+# Peripherals Configuration for my_esp32s3_st7789
+peripherals:
+  # LCD SPI Configuration for ST7789 (SCLK=IO12, MOSI=IO11)
+  - name: spi_display
+    type: spi
+    role: master
+    config:
+      spi_bus_config:
+        spi_port: SPI2_HOST
+        data0_io_num: 11
+        sclk_io_num: 12
+        max_transfer_sz: 4800    # 240 * 2 * 10 (10 lines RGB565)

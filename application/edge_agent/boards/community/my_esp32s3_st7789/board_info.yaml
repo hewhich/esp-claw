@@ -1,0 +1,5 @@
+board: my_esp32s3_st7789
+chip: esp32s3
+version: 1.0.0
+description: "Custom ESP32-S3 + 2.4in ST7789 240x320 SPI LCD (SCLK=12 MOSI=11 CS=10 DC=9 RST=8 BL=7)"
+manufacturer: "custom"
