@@ -27,6 +27,15 @@ jobs:
           rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
+          # Reconfigure in a loop until kconfig converges (up to 10 passes)
+          for i in $(seq 1 10); do
+            echo "=== Reconfigure pass $i ==="
+            if idf.py reconfigure; then
+              echo "Kconfig converged on pass $i"
+              break
+            fi
+            echo "Pass $i failed, trying again..."
+          done
           idf.py build
 
       - name: Upload firmware artifacts
