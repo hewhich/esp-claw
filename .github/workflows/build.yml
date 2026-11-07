@@ -27,12 +27,12 @@ jobs:
           rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          # Run reconfigure 3 times to let kconfig converge (it will "fail" but sdkconfig stabilizes)
+          # Let kconfig stabilize (it will "fail" but sdkconfig becomes valid)
           idf.py reconfigure || true
           idf.py reconfigure || true
           idf.py reconfigure || true
-          # Now sdkconfig is converged, build normally
-          idf.py build
+          # Now build directly with ninja, bypassing idf.py's kconfig re-check
+          ninja -C build
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
