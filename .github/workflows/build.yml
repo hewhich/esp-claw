@@ -51,9 +51,21 @@ jobs:
 
       - name: Build
         working-directory: application/edge_agent
+        # The dependency solver discovers new components across passes (the lock
+        # file in the repo is stale), and each pass regenerates Kconfig. idf.py
+        # only retries its own configure step twice, so allow a few outer
+        # attempts for the resolution to converge.
         run: |
           . /tmp/idf_env.sh
-          idf.py build
+          for attempt in 1 2 3 4; do
+            echo "=== build attempt $attempt ==="
+            if idf.py build; then
+              echo "build succeeded on attempt $attempt"
+              exit 0
+            fi
+          done
+          echo "build did not converge" >&2
+          exit 1
 
       - name: Merge firmware image
         working-directory: application/edge_agent
