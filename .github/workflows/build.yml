@@ -14,10 +14,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find serialize_model
+      - name: Find serialize_model in IDF
         run: |
-          grep -r "serialize_model" --include="Kconfig*" . 2>/dev/null || echo "not found in Kconfig"
-          grep -r "serialize_model" --include="*.py" . 2>/dev/null | head -10 || echo "not found in py"
+          grep -r "serialize_model" $IDF_PATH/ --include="*.py" 2>/dev/null | head -10
+          grep -r "serialize_model" $IDF_PATH/ --include="Kconfig*" 2>/dev/null | head -10
 
       - name: Set target and build
         working-directory: application/edge_agent
@@ -25,4 +25,4 @@ jobs:
           . $IDF_PATH/export.sh > /dev/null
           rm -rf build sdkconfig
           idf.py set-target esp32s3
-          idf.py build 2>&1 | tail -50
+          idf.py build 2>&1 | tail -30
