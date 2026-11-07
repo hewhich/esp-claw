@@ -14,40 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install bmgr helper
-        run: |
-          . $IDF_PATH/export.sh > /dev/null
-          python -m pip install --upgrade pip
-          pip install esp-bmgr-assist
-
-      - name: Debug: show unknown kconfig symbols
+      - name: Basic build - no bmgr, just set target
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
           rm -rf build sdkconfig
-          idf.py bmgr -c ./boards -b my_esp32s3_st7789
-          sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          
-          # Run kconfgen directly and capture all output
-          python3 -c "
-          import subprocess, os
-          env = os.environ.copy()
-          env['IDF_TARGET'] = 'esp32s3'
-          result = subprocess.run(
-            ['python3', '$IDF_PATH/tools/kconfgen.py',
-             '--sdkconfig', 'sdkconfig',
-             '--config', '$IDF_PATH/Kconfig',
-             '--env', 'IDF_TARGET=esp32s3',
-             '--output', 'config/sdkconfig.h',
-             '--output', 'config/sdkconfig.cmake',
-             '--output', 'config/sdkconfig.rename',
-             '--output', 'sdkconfig'],
-            capture_output=True, text=True, cwd='.', env=env
-          )
-          print('STDOUT:', result.stdout[:2000])
-          print('STDERR:', result.stderr[:2000])
-          print('Return code:', result.returncode)
-          " 2>&1 || true
-          
-          echo "=== sdkconfig after ==="
-          head -30 sdkconfig 2>/dev/null || echo "no sdkconfig"
+          idf.py set-target esp32s3
+          idf.py build
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-agent-firmware
+          path: application/edge_agent/build/*.bin
