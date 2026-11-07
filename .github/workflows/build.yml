@@ -14,7 +14,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Basic build - no bmgr, just set target
+      - name: Upgrade component manager
+        run: |
+          . $IDF_PATH/export.sh > /dev/null
+          python -m pip install --upgrade pip
+          pip install --upgrade idf-component-manager esp-bmgr-assist
+
+      - name: Build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
