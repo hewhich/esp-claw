@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: espressif/idf:v5.5.4
-    # Container jobs default to /bin/sh; the IDF env export below needs bash.
+    # Container jobs default to /bin/sh; the IDF env script needs bash.
     defaults:
       run:
         shell: bash
@@ -21,36 +21,44 @@ jobs:
       - name: Enter IDF environment
         # Do not source export.sh: activate_venv.py aborts on a python dependency
         # version check inside the container. idf_tools.py export only sets paths,
-        # and keeps the image's own idf-component-manager (3.x), which handles the
-        # repo's relative path dependencies.
+        # and keeps the image's own idf-component-manager (3.x), which understands
+        # the repo's relative path dependencies.
+        # Written to a file because exporting PATH through GITHUB_ENV leaves the
+        # literal "$PATH" unexpanded and breaks every later step.
         run: |
-          $IDF_PATH/tools/idf_tools.py export --format key-value >> $GITHUB_ENV
-          echo "IDF_PATH=$IDF_PATH" >> $GITHUB_ENV
+          $IDF_PATH/tools/idf_tools.py export > /tmp/idf_env.sh
+          . /tmp/idf_env.sh
+          echo "IDF_PATH=$IDF_PATH"
+          which bash idf.py python
 
       - name: Show IDF environment
         run: |
-          which idf.py
-          python -m pip show idf-component-manager | sed -n '1,2p'
+          . /tmp/idf_env.sh
           idf.py --version
+          python -m pip show idf-component-manager | sed -n '1,2p'
 
       - name: Install board manager helper
         run: |
+          . /tmp/idf_env.sh
           python -m pip install --upgrade esp-bmgr-assist
 
       - name: Select board
         working-directory: application/edge_agent
         run: |
+          . /tmp/idf_env.sh
           rm -rf build sdkconfig sdkconfig.old
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
 
       - name: Build
         working-directory: application/edge_agent
         run: |
+          . /tmp/idf_env.sh
           idf.py build
 
       - name: Merge firmware image
         working-directory: application/edge_agent
         run: |
+          . /tmp/idf_env.sh
           esptool.py --chip esp32s3 merge_bin -o build/edge_agent_merged.bin \
             --flash_mode dio --flash_freq 80m --flash_size 16MB @build/flash_args
 
