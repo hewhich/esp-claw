@@ -24,7 +24,7 @@ jobs:
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
-          export IDF_TARGET=esp32s3
+          echo 'CONFIG_IDF_TARGET="esp32s3"' > sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           idf.py build
 
