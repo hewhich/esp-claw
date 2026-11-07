@@ -10,13 +10,6 @@ if(EXISTS "${EDGE_AGENT_BOARD_MANAGER_DEFAULTS}")
 endif()
 
 if(EDGE_AGENT_FLASH_SIZE)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig")
-        file(READ "${CMAKE_SOURCE_DIR}/sdkconfig" EDGE_AGENT_SDKCONFIG_CONTENT)
-        string(REGEX REPLACE "(^|\\n)CONFIG_PARTITION_TABLE_CUSTOM_FILENAME=\"[^\\n]*\"\\n" "\\1" EDGE_AGENT_SDKCONFIG_CONTENT "${EDGE_AGENT_SDKCONFIG_CONTENT}")
-        string(REGEX REPLACE "(^|\\n)CONFIG_PARTITION_TABLE_FILENAME=\"[^\\n]*\"\\n" "\\1" EDGE_AGENT_SDKCONFIG_CONTENT "${EDGE_AGENT_SDKCONFIG_CONTENT}")
-        file(WRITE "${CMAKE_SOURCE_DIR}/sdkconfig" "${EDGE_AGENT_SDKCONFIG_CONTENT}")
-    endif()
-
     set(EDGE_AGENT_PARTITION_DEFAULTS "${CMAKE_BINARY_DIR}/edge_agent_partition_auto.defaults")
     file(WRITE "${EDGE_AGENT_PARTITION_DEFAULTS}"
         "# Auto-generated from flash size selection. Do not edit.\n"
