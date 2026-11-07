@@ -20,25 +20,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
-      - name: Debug kconfig convergence
+      - name: Configure board and build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
           rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
+          idf.py build
 
-          echo "=== sdkconfig.defaults ==="
-          cat sdkconfig.defaults
-
-          echo "=== board_manager.defaults ==="
-          cat components/gen_bmgr_codes/board_manager.defaults
-
-          echo "=== First kconfig run ==="
-          idf.py reconfigure 2>&1 | head -100 || true
-
-          echo "=== sdkconfig after run 1 ==="
-          cat sdkconfig | head -50
-
-          echo "=== Check for unknown symbols ==="
-          grep -i "unknown\|warning\|deprecated" sdkconfig || echo "none found"
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-agent-firmware
+          path: application/edge_agent/build/*.bin
