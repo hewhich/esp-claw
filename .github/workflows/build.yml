@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: espressif/idf:v5.5.4
-    # Container jobs default to /bin/sh; export.sh needs bash to activate the venv.
+    # Container jobs default to /bin/sh; the IDF env export below needs bash.
     defaults:
       run:
         shell: bash
@@ -18,41 +18,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fix python dependencies
-        # espressif/idf:v5.5.4 ships idf-component-manager 3.x, but IDF 5.5 requires ~=2.2,
-        # which makes export.sh abort with "Activation script failed".
-        # `python` on PATH is /usr/bin/python without pip, so use the IDF venv python directly.
+      - name: Enter IDF environment
+        # Do not source export.sh: activate_venv.py aborts on a python dependency
+        # version check inside the container. idf_tools.py export only sets paths,
+        # and keeps the image's own idf-component-manager (3.x), which handles the
+        # repo's relative path dependencies.
         run: |
-          PY=/opt/esp/python_env/idf5.5_py3.12_env/bin/python
-          $PY -m pip --version
-          $PY -m pip install --upgrade "idf-component-manager~=2.2"
-          $PY -m pip install --upgrade esp-bmgr-assist
-          $PY -m pip install --upgrade "idf-component-manager~=2.2"
-          $PY -m pip show idf-component-manager --disable-pip-version-check
+          $IDF_PATH/tools/idf_tools.py export --format key-value >> $GITHUB_ENV
+          echo "IDF_PATH=$IDF_PATH" >> $GITHUB_ENV
 
       - name: Show IDF environment
         run: |
-          . $IDF_PATH/export.sh
-          echo "IDF_PATH=$IDF_PATH"
+          which idf.py
+          python -m pip show idf-component-manager | sed -n '1,2p'
           idf.py --version
+
+      - name: Install board manager helper
+        run: |
+          python -m pip install --upgrade esp-bmgr-assist
 
       - name: Select board
         working-directory: application/edge_agent
         run: |
-          . $IDF_PATH/export.sh
           rm -rf build sdkconfig sdkconfig.old
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
 
       - name: Build
         working-directory: application/edge_agent
         run: |
-          . $IDF_PATH/export.sh
           idf.py build
 
       - name: Merge firmware image
         working-directory: application/edge_agent
         run: |
-          . $IDF_PATH/export.sh
           esptool.py --chip esp32s3 merge_bin -o build/edge_agent_merged.bin \
             --flash_mode dio --flash_freq 80m --flash_size 16MB @build/flash_args
 
