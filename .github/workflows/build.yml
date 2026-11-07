@@ -14,10 +14,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find serialize_model in IDF
+      - name: Find serialize_model everywhere
         run: |
-          grep -r "serialize_model" $IDF_PATH/ --include="*.py" 2>/dev/null | head -10
-          grep -r "serialize_model" $IDF_PATH/ --include="Kconfig*" 2>/dev/null | head -10
+          grep -r "serialize_model" . 2>/dev/null | grep -v ".git/" | head -20
 
       - name: Set target and build
         working-directory: application/edge_agent
