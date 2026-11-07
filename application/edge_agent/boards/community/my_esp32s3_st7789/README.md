@@ -47,7 +47,7 @@ idf.py build
 
 ## 说明
 
-- 默认按 Flash 8MB + 8MB Octal PSRAM（N8R8）配置。若模块是 N8R2 或没有 PSRAM，请改
+- 默认按 N16R8（16MB Flash + 8MB Octal PSRAM）配置。若模块是 8MB Flash，把 FLASHSIZE 改回 16MB 之外的对应项并换分区表；若 PSRAM 是 QUAD
   `sdkconfig.defaults.board`：`CONFIG_SPIRAM_MODE_OCT=y` → `CONFIG_SPIRAM_MODE_QUAD=y`；
   没有 PSRAM 则删掉三行 `CONFIG_SPIRAM*`。
 - 屏幕 240×320 竖屏，`invert_color: true`。
