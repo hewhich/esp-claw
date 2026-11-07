@@ -20,14 +20,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
-      - name: Configure board and build
+      - name: Configure board and build (retry loop)
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
           rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          idf.py build
+          
+          # Retry build up to 10 times until kconfig converges
+          for i in $(seq 1 10); do
+            echo "=== Build attempt $i ==="
+            if idf.py build; then
+              echo "=== Build succeeded on attempt $i ==="
+              break
+            fi
+            echo "=== Build attempt $i failed, retrying ==="
+          done
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
