@@ -14,38 +14,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Find serialize_model
+        run: |
+          grep -r "serialize_model" --include="Kconfig*" . 2>/dev/null || echo "not found in Kconfig"
+          grep -r "serialize_model" --include="*.py" . 2>/dev/null | head -10 || echo "not found in py"
+
       - name: Set target and build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
           rm -rf build sdkconfig
-
-          # Set target first
           idf.py set-target esp32s3
-
-          # Create sdkconfig.defaults with board settings
-          cat > sdkconfig.defaults << 'DEFAULTS'
-          # Flash
-          CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
-          # PSRAM Octal
-          CONFIG_SPIRAM=y
-          CONFIG_SPIRAM_MODE_OCT=y
-          CONFIG_SPIRAM_SPEED_80M=y
-          # Board
-          CONFIG_ESP_BOARD_MY_ESP32S3_ST7789=y
-          CONFIG_ESP_BOARD_NAME="my_esp32s3_st7789"
-          CONFIG_ESP_BOARD_PERIPH_SPI_SUPPORT=y
-          CONFIG_ESP_BOARD_PERIPH_I2S_SUPPORT=y
-          CONFIG_ESP_BOARD_DEV_AUDIO_CODEC_SUPPORT=y
-          CONFIG_ESP_BOARD_DEV_DISPLAY_LCD_SUPPORT=y
-          CONFIG_ESP_BOARD_DEV_DISPLAY_LCD_SUB_SPI_SUPPORT=y
-          CONFIG_CODEC_DUMMY_SUPPORT=y
-          DEFAULTS
-
-          idf.py build
-
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: edge-agent-firmware
-          path: application/edge_agent/build/*.bin
+          idf.py build 2>&1 | tail -50
