@@ -27,7 +27,13 @@ jobs:
           idf.py set-target esp32s3 || true
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          idf.py build || (echo "=== KCONFIG STDERR ==="; cat build/log/idf_py_stderr_output_* 2>/dev/null; echo "=== KCONFIG STDOUT ==="; cat build/log/idf_py_stdout_output_* 2>/dev/null; exit 1)
+          echo "=== Kconfig.projbuild ==="
+          cat components/gen_bmgr_codes/Kconfig.projbuild
+          echo "=== board_manager.defaults ==="
+          cat components/gen_bmgr_codes/board_manager.defaults
+          echo "=== sdkconfig.defaults ==="
+          cat sdkconfig.defaults
+          idf.py build || (echo "=== BUILD FAILED, dumping sdkconfig ==="; cat sdkconfig; exit 1)
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
