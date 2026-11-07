@@ -21,12 +21,14 @@ jobs:
       - name: Fix python dependencies
         # espressif/idf:v5.5.4 ships idf-component-manager 3.x, but IDF 5.5 requires ~=2.2,
         # which makes export.sh abort with "Activation script failed".
+        # `python` on PATH is /usr/bin/python without pip, so use the IDF venv python directly.
         run: |
-          python -m pip --version
-          python -m pip install --upgrade "idf-component-manager~=2.2"
-          python -m pip install --upgrade esp-bmgr-assist
-          python -m pip install --upgrade "idf-component-manager~=2.2"
-          python -m pip show idf-component-manager | head -3
+          PY=/opt/esp/python_env/idf5.5_py3.12_env/bin/python
+          $PY -m pip --version
+          $PY -m pip install --upgrade "idf-component-manager~=2.2"
+          $PY -m pip install --upgrade esp-bmgr-assist
+          $PY -m pip install --upgrade "idf-component-manager~=2.2"
+          $PY -m pip show idf-component-manager | head -3
 
       - name: Show IDF environment
         run: |
