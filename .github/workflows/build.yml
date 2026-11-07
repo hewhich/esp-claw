@@ -14,16 +14,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install bmgr helper
+      - name: Show project.cmake around kconfig retry
         run: |
-          . $IDF_PATH/export.sh > /dev/null
-          python -m pip install --upgrade pip
-          pip install esp-bmgr-assist
-
-      - name: Find and patch kconfig retry limit
-        run: |
-          grep -n "retry" $IDF_PATH/tools/cmake/project.cmake || true
-          grep -n "Missing required kconfig" $IDF_PATH/tools/cmake/project.cmake || true
+          sed -n '740,780p' $IDF_PATH/tools/cmake/project.cmake
 
       - name: Configure board and build
         working-directory: application/edge_agent
