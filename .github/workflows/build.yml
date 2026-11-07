@@ -14,9 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show project.cmake around kconfig retry
+      - name: Install bmgr helper
         run: |
-          sed -n '740,780p' $IDF_PATH/tools/cmake/project.cmake
+          . $IDF_PATH/export.sh > /dev/null
+          python -m pip install --upgrade pip
+          pip install esp-bmgr-assist
+
+      - name: Patch kconfig retry limit
+        run: |
+          sed -i 's/retried EQUAL 1/retried EQUAL 20/g' $IDF_PATH/tools/cmake/project.cmake
+          grep "retried EQUAL" $IDF_PATH/tools/cmake/project.cmake
 
       - name: Configure board and build
         working-directory: application/edge_agent
