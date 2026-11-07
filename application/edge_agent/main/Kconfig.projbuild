@@ -1,5 +1,32 @@
 menu "App Config"
 
+menu "Optional component symbols"
+
+    # Symbols referenced by component manifests / Kconfig "if" clauses of optional
+    # dependencies that get skipped on boards without those peripherals (camera,
+    # knob, USB audio). When a symbol is absent, idf-component-manager's
+    # prepare_components step exits with code 10 ("missing kconfig") and the build
+    # dies with "Missing required kconfig option after retry". Declaring them here
+    # with default n keeps the rule evaluation resolvable; the components stay out
+    # of the build either way.
+    config ESP_VIDEO_RENDER_LVGL_BACKEND_SUPPORT
+        bool
+        default n
+
+    config ESP_VIDEO_RENDER_TEXT_WIDGET_SUPPORT
+        bool
+        default n
+
+    config ESP_BOARD_DEV_KNOB_SUPPORT
+        bool
+        default n
+
+    config CODEC_UAC_SUPPORT
+        bool
+        default n
+
+endmenu
+
 menu "Default Wi-Fi Settings"
 
     config APP_WIFI_SSID
