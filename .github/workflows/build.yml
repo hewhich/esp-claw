@@ -14,9 +14,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find serialize_model everywhere
+      - name: Check deps lock
         run: |
-          grep -r "serialize_model" . 2>/dev/null | grep -v ".git/" | head -20
+          ls -la application/edge_agent/dependencies.lock 2>/dev/null || echo "no lock file"
+          head -50 application/edge_agent/dependencies.lock 2>/dev/null || true
 
       - name: Set target and build
         working-directory: application/edge_agent
