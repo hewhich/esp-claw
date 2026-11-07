@@ -14,19 +14,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install bmgr helper
-        run: |
-          . $IDF_PATH/export.sh > /dev/null
-          python -m pip install --upgrade pip
-          pip install esp-bmgr-assist
-
-      - name: Configure board and build
+      - name: Set target and build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
           rm -rf build sdkconfig
-          idf.py bmgr -c ./boards -b my_esp32s3_st7789
-          sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
+
+          # Set target first
+          idf.py set-target esp32s3
+
+          # Create sdkconfig.defaults with board settings
+          cat > sdkconfig.defaults << 'DEFAULTS'
+          # Flash
+          CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+          # PSRAM Octal
+          CONFIG_SPIRAM=y
+          CONFIG_SPIRAM_MODE_OCT=y
+          CONFIG_SPIRAM_SPEED_80M=y
+          # Board
+          CONFIG_ESP_BOARD_MY_ESP32S3_ST7789=y
+          CONFIG_ESP_BOARD_NAME="my_esp32s3_st7789"
+          CONFIG_ESP_BOARD_PERIPH_SPI_SUPPORT=y
+          CONFIG_ESP_BOARD_PERIPH_I2S_SUPPORT=y
+          CONFIG_ESP_BOARD_DEV_AUDIO_CODEC_SUPPORT=y
+          CONFIG_ESP_BOARD_DEV_DISPLAY_LCD_SUPPORT=y
+          CONFIG_ESP_BOARD_DEV_DISPLAY_LCD_SUB_SPI_SUPPORT=y
+          CONFIG_CODEC_DUMMY_SUPPORT=y
+          DEFAULTS
+
           idf.py build
 
       - name: Upload firmware artifacts
