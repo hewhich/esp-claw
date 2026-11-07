@@ -47,6 +47,10 @@ jobs:
         run: |
           . /tmp/idf_env.sh
           rm -rf build sdkconfig sdkconfig.old
+          # The checked-in lock file predates several components (cap_files,
+          # esp_hls_stream, ...), which forces a re-solve on every configure pass.
+          # Start from a clean solve so the resolution is written once and reused.
+          rm -f dependencies.lock
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
 
       - name: Build
