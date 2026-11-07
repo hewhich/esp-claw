@@ -9,8 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: espressif/idf:v5.5.4
-    # espressif/idf image already exports IDF_PATH and puts idf.py on PATH.
-    # Do NOT source export.sh here: activate_venv.py --shell detect fails in CI.
+    # Container jobs default to /bin/sh; export.sh needs bash to activate the venv.
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
@@ -18,28 +20,33 @@ jobs:
 
       - name: Show IDF environment
         run: |
+          . $IDF_PATH/export.sh
           echo "IDF_PATH=$IDF_PATH"
           idf.py --version
 
       - name: Upgrade component manager and board manager
         run: |
+          . $IDF_PATH/export.sh
           python -m pip install --upgrade pip
           pip install --upgrade idf-component-manager esp-bmgr-assist
 
       - name: Select board
         working-directory: application/edge_agent
         run: |
+          . $IDF_PATH/export.sh
           rm -rf build sdkconfig sdkconfig.old
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
 
       - name: Build
         working-directory: application/edge_agent
         run: |
+          . $IDF_PATH/export.sh
           idf.py build
 
       - name: Merge firmware image
         working-directory: application/edge_agent
         run: |
+          . $IDF_PATH/export.sh
           esptool.py --chip esp32s3 merge_bin -o build/edge_agent_merged.bin \
             --flash_mode dio --flash_freq 80m --flash_size 16MB @build/flash_args
 
