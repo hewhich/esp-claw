@@ -20,6 +20,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
+      - name: Patch ESP-IDF kconfig retry limit
+        run: |
+          # Increase kconfig retry limit from 3 to 20 in project.cmake
+          sed -i 's/if(retry_count GREATER 2)/if(retry_count GREATER 20)/g' $IDF_PATH/tools/cmake/project.cmake
+          grep "retry_count GREATER" $IDF_PATH/tools/cmake/project.cmake
+
       - name: Configure board and build
         working-directory: application/edge_agent
         run: |
@@ -27,12 +33,7 @@ jobs:
           rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          # Let kconfig stabilize (it will "fail" but sdkconfig becomes valid)
-          idf.py reconfigure || true
-          idf.py reconfigure || true
-          idf.py reconfigure || true
-          # Now build directly with ninja, bypassing idf.py's kconfig re-check
-          ninja -C build
+          idf.py build
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
