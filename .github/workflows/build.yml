@@ -26,10 +26,8 @@ jobs:
           . $IDF_PATH/export.sh > /dev/null
           idf.py set-target esp32s3 || true
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
-          # Remove unknown kconfig symbols that bmgr auto-generates
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          cat components/gen_bmgr_codes/board_manager.defaults
-          idf.py build
+          idf.py build || (echo "=== KCONFIG STDERR ==="; cat build/log/idf_py_stderr_output_* 2>/dev/null; echo "=== KCONFIG STDOUT ==="; cat build/log/idf_py_stdout_output_* 2>/dev/null; exit 1)
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
