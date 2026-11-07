@@ -20,20 +20,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
-      - name: Configure target & board, then build
+      - name: Configure board and build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
-          idf.py set-target esp32s3 || true
+          rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-          echo "=== Kconfig.projbuild ==="
-          cat components/gen_bmgr_codes/Kconfig.projbuild
-          echo "=== board_manager.defaults ==="
-          cat components/gen_bmgr_codes/board_manager.defaults
-          echo "=== sdkconfig.defaults ==="
-          cat sdkconfig.defaults
-          idf.py build || (echo "=== BUILD FAILED, dumping sdkconfig ==="; cat sdkconfig; exit 1)
+          idf.py build
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
