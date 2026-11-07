@@ -20,30 +20,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
-      - name: Debug kconfig loop
+      - name: Configure board and build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
-          rm -rf build sdkconfig components/gen_bmgr_codes
+          rm -rf build sdkconfig
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           sed -i '/ESP_PLAYER_ENABLE_VIDEO/d' components/gen_bmgr_codes/board_manager.defaults 2>/dev/null || true
-
-          # Run reconfigure once, save sdkconfig
+          # Run reconfigure 3 times to let kconfig converge (it will "fail" but sdkconfig stabilizes)
           idf.py reconfigure || true
-          cp sdkconfig /tmp/sdkconfig_after_pass1.txt
-
-          # Run reconfigure again, save sdkconfig
           idf.py reconfigure || true
-          cp sdkconfig /tmp/sdkconfig_after_pass2.txt
-
-          # Run reconfigure a third time
           idf.py reconfigure || true
-          cp sdkconfig /tmp/sdkconfig_after_pass3.txt
-
-          echo "=== DIFF pass1 vs pass2 ==="
-          diff /tmp/sdkconfig_after_pass1.txt /tmp/sdkconfig_after_pass2.txt | head -50
-          echo "=== DIFF pass2 vs pass3 ==="
-          diff /tmp/sdkconfig_after_pass2.txt /tmp/sdkconfig_after_pass3.txt | head -50
+          # Now sdkconfig is converged, build normally
+          idf.py build
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
