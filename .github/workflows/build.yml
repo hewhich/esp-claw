@@ -28,7 +28,7 @@ jobs:
           $PY -m pip install --upgrade "idf-component-manager~=2.2"
           $PY -m pip install --upgrade esp-bmgr-assist
           $PY -m pip install --upgrade "idf-component-manager~=2.2"
-          $PY -m pip show idf-component-manager | head -3
+          $PY -m pip show idf-component-manager --disable-pip-version-check
 
       - name: Show IDF environment
         run: |
