@@ -14,22 +14,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Upgrade component manager
+      - name: Upgrade component manager and board manager
         run: |
           . $IDF_PATH/export.sh > /dev/null
           python -m pip install --upgrade pip
           pip install --upgrade idf-component-manager esp-bmgr-assist
 
+      - name: Select board
+        working-directory: application/edge_agent
+        run: |
+          . $IDF_PATH/export.sh > /dev/null
+          rm -rf build sdkconfig sdkconfig.old
+          idf.py bmgr -c ./boards -b my_esp32s3_st7789
+
       - name: Build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
-          rm -rf build sdkconfig
-          idf.py set-target esp32s3
           idf.py build
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
           name: edge-agent-firmware
-          path: application/edge_agent/build/*.bin
+          path: |
+            application/edge_agent/build/*.bin
+            application/edge_agent/build/bootloader/*.bin
+            application/edge_agent/build/partition_table/*.bin
+            application/edge_agent/build/flash_args

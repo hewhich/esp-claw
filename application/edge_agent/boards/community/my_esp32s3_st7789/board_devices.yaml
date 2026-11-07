@@ -1,8 +1,8 @@
 version: 1.0.0
-# Devices Configuration for my_esp32s3_st7789
+# Devices for ESP32-S3 + ST7789 + INMP441 + MAX98357A (no codec chip, pure I2S)
 devices:
-  # Audio DAC (MAX98357A I2S class-D amp) + ADC (INMP441 I2S mic) - no codec chip, pure I2S
-  # BCLK=IO4, WS=IO5, DOUT=IO6 (-> MAX98357A DIN), DIN=IO3 (<- INMP441 SD), MCLK=none
+
+  # MAX98357A amplifier (internal/dummy codec, DAC only)
   - name: audio_dac
     chip: internal
     type: audio_codec
@@ -10,13 +10,14 @@ devices:
     config:
       adc_enabled: false
       dac_enabled: true
-      dac_max_channel: 2
-      dac_channel_mask: "11"
+      dac_max_channel: 1
+      dac_channel_mask: "1"
       dac_init_gain: 0
       mclk_enabled: false
     peripherals:
       - name: i2s_audio_out
 
+  # INMP441 microphone (internal/dummy codec, ADC only)
   - name: audio_adc
     chip: internal
     type: audio_codec
@@ -24,16 +25,14 @@ devices:
     config:
       adc_enabled: true
       dac_enabled: false
-      adc_max_channel: 2
-      adc_channel_mask: "11"
-      adc_channel_labels: [FC, RE]
+      adc_max_channel: 1
+      adc_channel_mask: "1"
       adc_init_gain: 0
       mclk_enabled: false
     peripherals:
       - name: i2s_audio_in
 
-  # SPI Display Device (ST7789 240x320 portrait, 2.4 inch module)
-  # SCLK=IO12, MOSI=IO11, CS=IO10, DC=IO9, RST=IO8, BL=IO7
+  # ST7789 2.4in 240x320 SPI LCD, no backlight control pin
   - name: display_lcd
     chip: st7789
     type: display_lcd
@@ -49,15 +48,11 @@ devices:
       io_spi_config:
         cs_gpio_num: 10
         dc_gpio_num: 9
-        spi_mode: 3
+        spi_mode: 0
         pclk_hz: 40000000
-
       lcd_panel_config:
         reset_gpio_num: 8
-        data_endian: "LCD_RGB_DATA_ENDIAN_BIG"
-        flags:
-          reset_active_high: false
+        data_endian: LCD_RGB_DATA_ENDIAN_BIG
         vendor_config: NULL
-
     peripherals:
-    - name: spi_display
+      - name: spi_display

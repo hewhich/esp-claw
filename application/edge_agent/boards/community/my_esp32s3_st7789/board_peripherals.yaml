@@ -1,7 +1,8 @@
 version: 1.0.0
-# Peripherals Configuration for my_esp32s3_st7789
+# Peripherals for ESP32-S3 + ST7789 2.4in + INMP441 + MAX98357A
 peripherals:
-  # LCD SPI Configuration for ST7789 (SCLK=IO12, MOSI=IO11)
+
+  # ST7789 LCD on SPI2_HOST (7-pin module, backlight tied to 3.3V -> no LEDC device)
   - name: spi_display
     type: spi
     role: master
@@ -10,42 +11,46 @@ peripherals:
         spi_port: SPI2_HOST
         data0_io_num: 11
         sclk_io_num: 12
-        max_transfer_sz: 4800    # 240 * 2 * 10 (10 lines RGB565)
+        max_transfer_sz: 4800    # 240 * 2 * 10 lines of RGB565
 
-  # I2S audio: MAX98357A amp (out) + INMP441 mic (in) on one I2S port 0.
-  # BCLK=IO4, WS=IO5, DOUT=IO6 (to amp), DIN=IO3 (from mic), MCLK unused.
+  # MAX98357A class-D amplifier: I2S0 STD TX, ESP is master
   - name: i2s_audio_out
     type: i2s
-    role: slave
+    role: master
     format: std-out
-    config: &bt_audio_i2s_config
+    config:
+      port: 1
+      sample_rate_hz: 16000
+      mclk_multiple: 256
+      data_bit_width: 16
+      slot_bit_width: I2S_SLOT_BIT_WIDTH_AUTO
+      slot_mode: I2S_SLOT_MODE_MONO
+      slot_mask: I2S_STD_SLOT_BOTH
+      ws_width: 16
+      pins:
+        mclk: -1
+        bclk: 15
+        ws: 16
+        dout: 7
+        din: -1
+
+  # INMP441 MEMS microphone: I2S0 STD RX, ESP is master
+  - name: i2s_audio_in
+    type: i2s
+    role: master
+    format: std-in
+    config:
       port: 0
       sample_rate_hz: 16000
-      clk_src: I2S_CLK_SRC_DEFAULT
       mclk_multiple: 256
-      data_bit_width: 32
+      data_bit_width: 16
       slot_bit_width: I2S_SLOT_BIT_WIDTH_AUTO
-      slot_mode: I2S_SLOT_MODE_STEREO
-      slot_mask: I2S_STD_SLOT_BOTH
-      ws_width: 32
-      ws_pol: false
-      bit_shift: true
-      left_align: true
-      big_endian: false
-      bit_order_lsb: false
+      slot_mode: I2S_SLOT_MODE_MONO
+      slot_mask: I2S_STD_SLOT_LEFT
+      ws_width: 16
       pins:
         mclk: -1
         bclk: 4
         ws: 5
-        dout: 6
+        dout: -1
         din: 3
-      invert_flags:
-        mclk_inv: false
-        bclk_inv: false
-        ws_inv: false
-
-  - name: i2s_audio_in
-    type: i2s
-    role: slave
-    format: std-in
-    config: *bt_audio_i2s_config
