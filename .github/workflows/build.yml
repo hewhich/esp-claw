@@ -20,11 +20,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
-      - name: Patch ESP-IDF kconfig retry limit
+      - name: Find and patch kconfig retry limit
         run: |
-          # Increase kconfig retry limit from 3 to 20 in project.cmake
-          sed -i 's/if(retry_count GREATER 2)/if(retry_count GREATER 20)/g' $IDF_PATH/tools/cmake/project.cmake
-          grep "retry_count GREATER" $IDF_PATH/tools/cmake/project.cmake
+          grep -n "retry" $IDF_PATH/tools/cmake/project.cmake || true
+          grep -n "Missing required kconfig" $IDF_PATH/tools/cmake/project.cmake || true
 
       - name: Configure board and build
         working-directory: application/edge_agent
