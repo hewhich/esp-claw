@@ -20,11 +20,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install esp-bmgr-assist
 
-      - name: Configure board, then build (ESP32-S3 + ST7789 2.4in + INMP441 + MAX98357A)
+      - name: Configure target & board, then build
         working-directory: application/edge_agent
         run: |
           . $IDF_PATH/export.sh > /dev/null
-          echo 'CONFIG_IDF_TARGET="esp32s3"' > sdkconfig
+          idf.py set-target esp32s3 || true
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
           idf.py build
 
