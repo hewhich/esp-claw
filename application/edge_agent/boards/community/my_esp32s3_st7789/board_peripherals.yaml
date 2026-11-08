@@ -11,7 +11,8 @@ peripherals:
         spi_port: SPI2_HOST
         data0_io_num: 11
         sclk_io_num: 12
-        max_transfer_sz: 4800    # 240 * 2 * 10 lines of RGB565
+        max_transfer_sz: 19200   # 240 * 2 * 40 lines of RGB565: one full LVGL
+                                 # draw buffer per SPI transaction instead of 4 chunks
 
   # MAX98357A class-D amplifier: I2S0 STD TX, ESP is master
   - name: i2s_audio_out

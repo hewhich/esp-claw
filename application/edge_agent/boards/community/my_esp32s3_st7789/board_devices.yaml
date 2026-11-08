@@ -49,7 +49,10 @@ devices:
         cs_gpio_num: 10
         dc_gpio_num: 9
         spi_mode: 0
-        pclk_hz: 40000000
+        # 40 MHz is marginal on hand-wired SPI (dupont wires / no ground
+        # plane): every flush glitched the panel. 26 MHz keeps a full
+        # 240x320 frame under ~50 ms and stays well inside timing margin.
+        pclk_hz: 26000000
       lcd_panel_config:
         reset_gpio_num: 8
         data_endian: LCD_RGB_DATA_ENDIAN_BIG
