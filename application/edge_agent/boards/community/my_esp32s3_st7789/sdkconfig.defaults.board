@@ -22,3 +22,7 @@ CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
 # resources whose names exceed 8.3, and fatfsgen aborts without LFN support.
 CONFIG_FATFS_LFN_HEAP=y
 CONFIG_FATFS_MAX_LFN=255
+
+# esp_http_server WebSocket support: the webim routes in http_server use
+# httpd_ws_* APIs and fail to compile without it.
+CONFIG_HTTPD_WS_SUPPORT=y
