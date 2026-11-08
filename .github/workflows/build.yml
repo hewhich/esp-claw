@@ -107,8 +107,10 @@ jobs:
         working-directory: application/edge_agent
         run: |
           . /tmp/idf_env.sh
-          esptool.py --chip esp32s3 merge_bin -o build/edge_agent_merged.bin \
-            --flash_mode dio --flash_freq 80m --flash_size 16MB @build/flash_args
+          # flash_args lists paths relative to the build directory.
+          cd build
+          esptool.py --chip esp32s3 merge_bin -o edge_agent_merged.bin \
+            --flash_mode dio --flash_freq 80m --flash_size 16MB @flash_args
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
