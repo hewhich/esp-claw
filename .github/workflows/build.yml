@@ -76,6 +76,33 @@ jobs:
           echo "build did not converge" >&2
           exit 1
 
+      - name: Diagnose dependency resolution
+        if: always()
+        working-directory: application/edge_agent
+        run: |
+          set +e
+          echo "--- lock file ---"
+          ls -l dependencies.lock 2>&1
+          grep -c "path:" dependencies.lock 2>&1
+          echo "--- sdkconfig symbols ---"
+          grep -E "KNOB_SUPPORT|CODEC_UAC_SUPPORT" sdkconfig 2>&1
+          echo "--- sdkconfig.json keys ---"
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("build/config/sdkconfig.json")
+          if not p.exists():
+              print("no sdkconfig.json")
+          else:
+              d = json.loads(p.read_text())
+              keys = list(d.keys())
+              print("total keys:", len(keys))
+              for k in keys:
+                  if "KNOB" in k or "UAC" in k:
+                      print(k, "=", d[k])
+          PY
+          echo "--- managed components ---"
+          ls managed_components 2>&1 | head -40
+
       - name: Merge firmware image
         working-directory: application/edge_agent
         run: |
