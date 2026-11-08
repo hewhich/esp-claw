@@ -706,6 +706,11 @@ void lua_lvgl_apply_font_style_field(lua_State *L, int index, lv_obj_t *obj)
     (void)obj;
 }
 
+void lua_lvgl_apply_default_font_locked(lv_obj_t *obj)
+{
+    (void)obj;
+}
+
 static int lua_lvgl_font_load_disabled(lua_State *L)
 {
     return luaL_error(L, "LVGL tiny_ttf is disabled");
