@@ -26,3 +26,15 @@ CONFIG_FATFS_MAX_LFN=255
 # esp_http_server WebSocket support: the webim routes in http_server use
 # httpd_ws_* APIs and fail to compile without it.
 CONFIG_HTTPD_WS_SUPPORT=y
+
+# http_server_core.c hardcodes config.max_open_sockets = 12, and esp_http_server
+# requires LWIP_MAX_SOCKETS >= max_open_sockets + 3 (it keeps 3 sockets itself).
+# With the IDF default of 10 the httpd rejects the config, http_server_start()
+# returns an error and the app aborts -> the board rebooted every ~1.4 s, which
+# looked like the LCD flashing once a second.
+CONFIG_LWIP_MAX_SOCKETS=20
+
+# Chinese UI text needs the runtime-loaded TTF from the system partition;
+# system_ui logs "ui font disabled" and falls back to the tiny built-in font
+# without this.
+CONFIG_LV_USE_TINY_TTF=y
