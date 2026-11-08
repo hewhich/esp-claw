@@ -97,7 +97,7 @@ jobs:
               keys = list(d.keys())
               print("total keys:", len(keys))
               for k in keys:
-                  if "KNOB" in k or "UAC" in k:
+                  if "KNOB" in k or "UAC" in k or "APP_WIFI" in k:
                       print(k, "=", d[k])
           PY
           echo "--- managed components ---"

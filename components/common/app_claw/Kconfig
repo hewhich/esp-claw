@@ -482,3 +482,17 @@ menu "App Claw Config"
     endmenu
 
 endmenu
+
+# Symbols referenced by the manifests / Kconfig "if" clauses of optional
+# dependencies that are skipped on boards without those peripherals (knob,
+# USB audio). idf-component-manager reports them as "missing kconfig" and
+# returns exit code 10 forever if no Kconfig file defines them, which makes
+# the CMake configure step fail. Declaring them here (default n) keeps the
+# rule evaluation resolvable without pulling the components in.
+config ESP_BOARD_DEV_KNOB_SUPPORT
+    bool
+    default n
+
+config CODEC_UAC_SUPPORT
+    bool
+    default n
