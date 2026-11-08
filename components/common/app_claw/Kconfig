@@ -490,9 +490,9 @@ endmenu
 # the CMake configure step fail. Declaring them here (default n) keeps the
 # rule evaluation resolvable without pulling the components in.
 config ESP_BOARD_DEV_KNOB_SUPPORT
-    bool
+    bool "Board has a knob device"
     default n
 
 config CODEC_UAC_SUPPORT
-    bool
+    bool "Board has an USB audio class device"
     default n
