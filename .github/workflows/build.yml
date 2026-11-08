@@ -54,40 +54,9 @@ jobs:
           idf.py bmgr -c ./boards -b my_esp32s3_st7789
 
       - name: Raise IDF configure retry limit
-        # idf_build_process returns 10 ("missing kconfig") whenever a solve pass
-        # discovers components that were not in the previous pass. This project
-        # needs ~3 passes (30 -> 107 -> 113 components) to converge, but
-        # project.cmake only retries once. Allow up to 8.
         run: |
-          python - <<'PY'
-          import pathlib
-          f = pathlib.Path('/opt/esp/idf/tools/cmake/project.cmake')
-          s = f.read_text()
-          old = """        if(result EQUAL 0)
-            break()
-        elseif(result EQUAL 10 AND retried EQUAL 0)
-            message(WARNING \"Missing kconfig option. Re-run the build process...\")
-            set(retried 1)
-        elseif(result EQUAL 10 AND retried EQUAL 1)
-            message(FATAL_ERROR \"Missing required kconfig option after retry.\")
-        else()
-            message(FATAL_ERROR \"idf_build_process failed with exit code ${result}\")
-        endif()"""
-          new = """        if(result EQUAL 0)
-            break()
-        elseif(result EQUAL 10 AND retried LESS 8)
-            message(WARNING \"Missing kconfig option. Re-run the build process...\")
-            math(EXPR retried \"${retried} + 1\")
-        elseif(result EQUAL 10)
-            message(FATAL_ERROR \"Missing required kconfig option after retry.\")
-        else()
-            message(FATAL_ERROR \"idf_build_process failed with exit code ${result}\")
-        endif()"""
-          if old in s:
-              f.write_text(s.replace(old, new, 1))
-              print("patched project.cmake retry limit")
-          else:
-              print("pattern not found; leaving project.cmake untouched")
+          . /tmp/idf_env.sh
+          python .github/scripts/patch_idf_retry.py
 
       - name: Build
         working-directory: application/edge_agent
