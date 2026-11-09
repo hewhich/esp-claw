@@ -22,6 +22,7 @@
 #include "esp_check.h"
 #include "esp_system.h"
 #include "esp_board_manager_includes.h"
+#include "esp_heap_caps.h"
 #include "captive_dns.h"
 #include "cmd_wifi.h"
 #include "freertos/FreeRTOS.h"
@@ -425,7 +426,19 @@ void app_main(void)
 
     ESP_ERROR_CHECK(wifi_manager_init());
 
+    ESP_LOGI(TAG, "heap before ui: internal free=%u largest=%u | internal-DMA free=%u largest=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA));
+
     ESP_ERROR_CHECK(app_claw_ui_start());
+
+    ESP_LOGI(TAG, "heap after ui: internal free=%u largest=%u | internal-DMA free=%u largest=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA));
 
     ESP_ERROR_CHECK(http_server_init(&(http_server_config_t) {
         .storage_base_path = app_fs_storage_base_path(),

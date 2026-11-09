@@ -32,7 +32,8 @@ CONFIG_HTTPD_WS_SUPPORT=y
 # With the IDF default of 10 the httpd rejects the config, http_server_start()
 # returns an error and the app aborts -> the board rebooted every ~1.4 s, which
 # looked like the LCD flashing once a second.
-CONFIG_LWIP_MAX_SOCKETS=20
+# esp_http_server needs LWIP_MAX_SOCKETS >= max_open_sockets(12) + 3 = 15
+CONFIG_LWIP_MAX_SOCKETS=16
 
 # Chinese UI text needs the runtime-loaded TTF from the system partition;
 # system_ui logs "ui font disabled" and falls back to the tiny built-in font

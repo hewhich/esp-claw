@@ -11,11 +11,13 @@ peripherals:
         spi_port: SPI2_HOST
         data0_io_num: 11
         sclk_io_num: 12
-        # Keep this small: esp_lcd's SPI io allocates a private DMA bounce
-        # buffer of this size in internal RAM. 19200 made it fail with
-        # ESP_ERR_NO_MEM and nothing could be drawn. 4800 = 10 lines of RGB565,
-        # the same value the reference boards use.
-        max_transfer_sz: 4800
+        # esp_lcd's SPI io needs a private DMA bounce buffer in internal RAM
+        # (the LVGL draw buffers live in PSRAM, which the SPI DMA cannot read
+        # directly). 19200 failed outright; 4800 also failed once the extra
+        # LwIP sockets / tiny_ttf font engine were enabled. 1920 = 4 lines of
+        # RGB565 leaves plenty of head-room and still moves a full 240x320
+        # frame in ~80 queued chunks.
+        max_transfer_sz: 1920
 
   # MAX98357A class-D amplifier: I2S0 STD TX, ESP is master
   - name: i2s_audio_out
