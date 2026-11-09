@@ -481,6 +481,12 @@ static lv_display_t *display_service_register_adapter_display(const dev_display_
                                                                         lcd_cfg->lcd_width,
                                                                         lcd_cfg->lcd_height,
                                                                         rotation);
+        /* Keep the draw buffer in internal RAM for SPI panels: the SPI DMA
+         * cannot read PSRAM, so a PSRAM buffer forces esp_lcd/spi_master to
+         * allocate a bounce buffer per flush, which fails with ESP_ERR_NO_MEM
+         * once Wi-Fi has taken the internal heap. A small internal-RAM draw
+         * buffer is transferred directly with no bounce allocation at all. */
+        disp_cfg.profile.use_psram = false;
 #else
         disp_cfg = ESP_LV_ADAPTER_DISPLAY_SPI_WITHOUT_PSRAM_DEFAULT_CONFIG(lcd_handles->panel_handle,
                                                                            lcd_handles->io_handle,
