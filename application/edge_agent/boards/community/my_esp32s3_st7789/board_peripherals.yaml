@@ -11,8 +11,11 @@ peripherals:
         spi_port: SPI2_HOST
         data0_io_num: 11
         sclk_io_num: 12
-        max_transfer_sz: 19200   # 240 * 2 * 40 lines of RGB565: one full LVGL
-                                 # draw buffer per SPI transaction instead of 4 chunks
+        # Keep this small: esp_lcd's SPI io allocates a private DMA bounce
+        # buffer of this size in internal RAM. 19200 made it fail with
+        # ESP_ERR_NO_MEM and nothing could be drawn. 4800 = 10 lines of RGB565,
+        # the same value the reference boards use.
+        max_transfer_sz: 4800
 
   # MAX98357A class-D amplifier: I2S0 STD TX, ESP is master
   - name: i2s_audio_out
