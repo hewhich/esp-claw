@@ -24,6 +24,11 @@
 static const char *TAG = "display_service";
 
 #define DISPLAY_SERVICE_DEFAULT_BUFFER_LINES 40
+/* SPI panels copy every flush through an internal-RAM DMA bounce buffer
+ * because the LVGL draw buffers live in PSRAM. Keep one SPI flush small
+ * enough for that buffer to always be allocatable (4800 B = 10 lines of
+ * 240 px RGB565). */
+#define DISPLAY_SERVICE_SPI_FLUSH_BUDGET_BYTES 4800
 #define DISPLAY_SERVICE_DEFAULT_TICK_MS 5
 #define DISPLAY_SERVICE_DEFAULT_TASK_PERIOD_MS 10
 #define DISPLAY_SERVICE_TASK_STACK 8192
@@ -635,7 +640,7 @@ esp_err_t display_service_start(const display_service_config_t *config)
 {
     esp_err_t ret;
     uint32_t buffer_lines = config && config->buffer_lines ?
-                            config->buffer_lines : DISPLAY_SERVICE_DEFAULT_BUFFER_LINES;
+                            config->buffer_lines : 0;
     uint32_t tick_ms = config && config->tick_ms ?
                        config->tick_ms : DISPLAY_SERVICE_DEFAULT_TICK_MS;
     dev_display_lcd_config_t *lcd_cfg = NULL;
@@ -646,6 +651,19 @@ esp_err_t display_service_start(const display_service_config_t *config)
     }
 
     ESP_GOTO_ON_ERROR(display_service_load_board_display(&lcd_cfg, &lcd_handles), fail, TAG, "load display failed");
+    if (buffer_lines == 0) {
+        buffer_lines = DISPLAY_SERVICE_DEFAULT_BUFFER_LINES;
+        if (strcmp(lcd_cfg->sub_type, "spi") == 0) {
+            uint32_t width = lcd_cfg->lcd_width ? (uint32_t)lcd_cfg->lcd_width : 1U;
+            uint32_t lines = DISPLAY_SERVICE_SPI_FLUSH_BUDGET_BYTES / (width * 2U);
+            if (lines == 0) {
+                lines = 1;
+            }
+            if (lines < buffer_lines) {
+                buffer_lines = lines;
+            }
+        }
+    }
     display_service_load_board_touch();
     s_display.info.touch_available = s_display.touch != NULL;
     ESP_GOTO_ON_FALSE(buffer_lines > 0 && buffer_lines <= lcd_cfg->lcd_height,

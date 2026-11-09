@@ -13,11 +13,9 @@ peripherals:
         sclk_io_num: 12
         # esp_lcd's SPI io needs a private DMA bounce buffer in internal RAM
         # (the LVGL draw buffers live in PSRAM, which the SPI DMA cannot read
-        # directly). 19200 failed outright; 4800 also failed once the extra
-        # LwIP sockets / tiny_ttf font engine were enabled. 1920 = 4 lines of
-        # RGB565 leaves plenty of head-room and still moves a full 240x320
-        # frame in ~80 queued chunks.
-        max_transfer_sz: 1920
+        # directly). Keep one transfer equal to the 10-line LVGL flush, so a
+        # single flush needs one bounce allocation instead of several.
+        max_transfer_sz: 4800
 
   # MAX98357A class-D amplifier: I2S0 STD TX, ESP is master
   - name: i2s_audio_out
