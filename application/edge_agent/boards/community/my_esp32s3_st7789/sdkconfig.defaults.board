@@ -14,7 +14,9 @@ CONFIG_SPIRAM_SPEED_80M=y
 # never touch PSRAM and Wi-Fi + LVGL + HTTPD leave ~5 KiB internal free, which
 # made newlib's fopen() abort while the skill registry was being scanned.
 CONFIG_SPIRAM_USE_MALLOC=y
-CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=4096
+# Only sub-512B chunks (kernel objects, tiny structs) stay in internal RAM;
+# everything else prefers PSRAM so the 8MB is actually used.
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=512
 # Keep a smaller pool held back for DMA-only allocations: 32KB starved the
 # general internal heap once skills/apps/capabilities were loaded.
 CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=16384
