@@ -10,6 +10,20 @@ CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_OCT=y
 CONFIG_SPIRAM_SPEED_80M=y
 
+# 8 MiB PSRAM next to only 512 KiB internal RAM: without this, malloc() can
+# never touch PSRAM and Wi-Fi + LVGL + HTTPD leave ~5 KiB internal free, which
+# made newlib's fopen() abort while the skill registry was being scanned.
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=4096
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=32768
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+
+# AP-only provisioning portal: the Wi-Fi defaults (10 static RX + 32 dynamic RX
+# + 32 dynamic TX buffers) are sized for STA throughput and do not fit here.
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=6
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=16
+CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM=16
+
 # Audio over plain I2S (INMP441 + MAX98357A) and LCD over SPI
 CONFIG_CODEC_DUMMY_SUPPORT=y
 CONFIG_ESP_BOARD_PERIPH_I2S_SUPPORT=y
