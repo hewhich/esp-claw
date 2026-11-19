@@ -35,6 +35,7 @@
 #include "claw_hw_registry.h"
 #include "cJSON.h"
 #include "esp_console.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 
 static const char *TAG = "app_claw_cli";
@@ -403,6 +404,10 @@ esp_err_t app_claw_cli_start(claw_hw_registry_handle_t registry)
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
 
     ESP_LOGI(TAG, "Starting console REPL");
+    ESP_LOGI(TAG, "before console repl: internal free=%u largest=%u dma=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA));
 
     repl_config.prompt = "app> ";
     repl_config.task_stack_size = 10240;
