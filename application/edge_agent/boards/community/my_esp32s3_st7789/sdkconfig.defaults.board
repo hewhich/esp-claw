@@ -58,6 +58,10 @@ CONFIG_LWIP_MAX_SOCKETS=12
 # system_ui logs "ui font disabled" and falls back to the tiny built-in font
 # without this.
 CONFIG_LV_USE_TINY_TTF=y
+# LVGL's builtin 64KB pool is a static array in internal DRAM; on this board
+# it starves every later malloc. Route LVGL allocations through libc malloc,
+# which falls back to the 8MB PSRAM.
+CONFIG_LV_USE_CLIB_MALLOC=y
 
 # app_main does the whole bring-up inline: FATFS mount + recovery copy, JSON
 # config loads, Wi-Fi/PHY init, LVGL adapter and UI start. The IDF default
