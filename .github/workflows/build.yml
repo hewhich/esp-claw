@@ -121,3 +121,4 @@ jobs:
             application/edge_agent/build/bootloader/*.bin
             application/edge_agent/build/partition_table/*.bin
             application/edge_agent/build/flash_args
+            application/edge_agent/build/*.elf
