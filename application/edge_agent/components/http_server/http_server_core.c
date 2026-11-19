@@ -76,7 +76,11 @@ esp_err_t http_server_start(void)
     config.ctrl_port = HTTP_SERVER_CTRL_PORT;
     config.max_uri_handlers = 48;
     config.stack_size = 8192;
-    config.max_open_sockets = 12;
+    /* esp_http_server needs LWIP_MAX_SOCKETS >= max_open_sockets + 3, and every
+     * socket costs internal RAM. 12 sockets starved a 16 KiB main stack and a
+     * small mutex allocation on this board (ESP_ERR_NO_MEM right after start),
+     * so keep the portal to 6 concurrent sockets. */
+    config.max_open_sockets = 6;
     config.lru_purge_enable = true;
 
     uint32_t task_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;

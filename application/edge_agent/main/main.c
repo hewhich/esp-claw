@@ -437,11 +437,22 @@ void app_main(void)
 
     ESP_ERROR_CHECK(app_claw_ui_start());
 
+    /* Register the save-config callback here, right after the UI: it only
+     * allocates app_claw's config mutex, and doing it before HTTP/Wi-Fi take
+     * their socket buffers guarantees that small allocation still succeeds
+     * (it failed with ESP_ERR_NO_MEM when done after http_server_start). */
+    ESP_ERROR_CHECK(app_claw_set_save_config_callback(main_save_claw_config, NULL));
+
     ESP_LOGI(TAG, "heap after ui: internal free=%u largest=%u | internal-DMA free=%u largest=%u",
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
              (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA),
              (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA));
+
+    ESP_LOGI(TAG, "heap before http: internal free=%u largest=%u | psram free=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
     ESP_ERROR_CHECK(http_server_init(&(http_server_config_t) {
         .storage_base_path = app_fs_storage_base_path(),
@@ -473,6 +484,10 @@ void app_main(void)
         ESP_LOGE(TAG, "Wi-Fi start failed: %s", esp_err_to_name(wifi_err));
     } else {
         ESP_ERROR_CHECK(http_server_start());
+        ESP_LOGI(TAG, "heap after http: internal free=%u largest=%u | psram free=%u",
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
         if (captive_dns_start(&(captive_dns_config_t) {
                 .ap_netif = wifi_manager_get_ap_netif(),
                 .configure_dhcp_dns = true,
@@ -512,7 +527,6 @@ void app_main(void)
         }
     }
 
-    ESP_ERROR_CHECK(app_claw_set_save_config_callback(main_save_claw_config, NULL));
     ESP_ERROR_CHECK(app_claw_start(s_claw_config, s_hw_registry));
 #if CONFIG_APP_CLAW_CAP_IM_LOCAL
     ESP_ERROR_CHECK(http_server_webim_bind_im());
