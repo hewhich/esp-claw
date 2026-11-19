@@ -103,6 +103,11 @@ jobs:
           echo "--- managed components ---"
           ls managed_components 2>&1 | head -40
 
+      - name: Report effective sdkconfig
+        working-directory: application/edge_agent
+        run: |
+          grep -E "^CONFIG_(ESP_MAIN_TASK_STACK_SIZE|LWIP_MAX_SOCKETS|SPIRAM|ESPTOOLPY_FLASHSIZE|LV_USE_TINY_TTF|FATFS)" sdkconfig | sort || true
+
       - name: Merge firmware image
         working-directory: application/edge_agent
         run: |
