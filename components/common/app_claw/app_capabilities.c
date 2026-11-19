@@ -40,6 +40,7 @@
 #if CONFIG_APP_CLAW_CAP_LUA
 #include "cap_app_mgr.h"
 #include "cap_lua.h"
+#include "esp_heap_caps.h"
 #endif
 #if CONFIG_APP_CLAW_CAP_MCP_CLIENT
 #include "cap_mcp_client.h"
@@ -615,6 +616,11 @@ static esp_err_t app_cap_prepare_lua(const app_claw_config_t *config,
     snprintf(path_temp, sizeof(path_temp), "%s/scripts/builtin/lib", system_root);
     cap_lua_add_package_path_dir(path_temp);
 
+    ESP_LOGI(TAG, "cap_lua prepare: internal free=%u largest=%u dma=%u | psram free=%u",
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     return app_lua_modules_register(config, paths->fatfs_base_path);
 }
 
