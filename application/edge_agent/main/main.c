@@ -415,6 +415,7 @@ void app_main(void)
     ESP_ERROR_CHECK(app_claw_hw_bridge_init(s_hw_registry));
     ESP_ERROR_CHECK(esp_board_manager_init());
     ESP_ERROR_CHECK(app_fs_init());
+    ESP_LOGI(TAG, "stage: filesystem ready");
 
     /* Publish the resolved storage roots so any component can compose paths
      * without knowing whether data lives on flash or an SD card. */
@@ -424,7 +425,9 @@ void app_main(void)
                                                   app_fs_get_storage_space,
                                                   NULL));
 
+    ESP_LOGI(TAG, "stage: entering wifi_manager_init");
     ESP_ERROR_CHECK(wifi_manager_init());
+    ESP_LOGI(TAG, "stage: wifi_manager_init returned");
 
     ESP_LOGI(TAG, "heap before ui: internal free=%u largest=%u | internal-DMA free=%u largest=%u",
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
