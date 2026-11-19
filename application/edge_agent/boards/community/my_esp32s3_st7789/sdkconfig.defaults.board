@@ -39,3 +39,10 @@ CONFIG_LWIP_MAX_SOCKETS=16
 # system_ui logs "ui font disabled" and falls back to the tiny built-in font
 # without this.
 CONFIG_LV_USE_TINY_TTF=y
+
+# app_main does the whole bring-up inline: FATFS mount + recovery copy, JSON
+# config loads, Wi-Fi/PHY init and UI start. The IDF default 3.5 KiB main task
+# stack overflows there ("A stack overflow in task main has been detected"),
+# which is what put the board into the ~1 s reboot loop and made the LCD look
+# like it was flashing every second.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384
