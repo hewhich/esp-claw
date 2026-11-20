@@ -73,3 +73,8 @@ CONFIG_LV_USE_CLIB_MALLOC=y
 # been detected"); 16 KiB still overflows once the SPI display path runs, so
 # give main a full 32 KiB (still small enough for internal RAM at boot).
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=32768
+
+# TLS (WeChat QR login, LLM API) needs far more heap than this board has spare in
+# internal RAM: mbedtls_ssl_handshake failed with varying mbedtls errors as soon
+# as the internal heap dipped. Put mbedtls allocations in PSRAM instead.
+CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=y
