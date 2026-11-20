@@ -410,24 +410,33 @@ esp_err_t app_claw_cli_start(claw_hw_registry_handle_t registry)
              (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA));
 
     repl_config.prompt = "app> ";
-    repl_config.task_stack_size = 10240;
+    /* 10 KiB stack needs one contiguous internal block; on this 16MB/8MB board the
+     * largest free internal block is often only ~11 KiB after capability init, so
+     * 10240 sat right on the edge and xTaskCreate failed on some boots. */
+    repl_config.task_stack_size = 6144;
     repl_config.max_cmdline_length = 512;
 
+    esp_err_t repl_err = ESP_OK;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(6, 2, 0)
-    ESP_ERROR_CHECK(esp_console_new_repl_stdio(&repl_config, &repl));
+    repl_err = esp_console_new_repl_stdio(&repl_config, &repl);
 #elif CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
+    repl_err = esp_console_new_repl_uart(&hw_config, &repl_config, &repl);
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
     esp_console_dev_usb_serial_jtag_config_t hw_config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl));
+    repl_err = esp_console_new_repl_usb_serial_jtag(&hw_config, &repl_config, &repl);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     esp_console_dev_usb_cdc_config_t hw_config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_usb_cdc(&hw_config, &repl_config, &repl));
+    repl_err = esp_console_new_repl_usb_cdc(&hw_config, &repl_config, &repl);
 #else
     ESP_LOGE(TAG, "No supported console backend is enabled");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
+    if (repl_err != ESP_OK || repl == NULL) {
+        ESP_LOGW(TAG, "console REPL unavailable (%s), device keeps running without CLI",
+                 esp_err_to_name(repl_err));
+        return ESP_OK;
+    }
     linenoiseSetReadFunction(app_claw_cli_read_blocking);
 
     register_cap_cli_commands();
