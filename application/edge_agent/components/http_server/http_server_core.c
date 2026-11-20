@@ -75,7 +75,7 @@ esp_err_t http_server_start(void)
     config.server_port = 80;
     config.ctrl_port = HTTP_SERVER_CTRL_PORT;
     config.max_uri_handlers = 48;
-    config.stack_size = 8192;
+    config.stack_size = 12288;
     /* esp_http_server needs LWIP_MAX_SOCKETS >= max_open_sockets + 3, and every
      * socket costs internal RAM. 12 sockets starved a 16 KiB main stack and a
      * small mutex allocation on this board (ESP_ERR_NO_MEM right after start),
@@ -83,13 +83,11 @@ esp_err_t http_server_start(void)
     config.max_open_sockets = 6;
     config.lru_purge_enable = true;
 
-    uint32_t task_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
-#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
-    if (heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM) >= config.stack_size) {
-        task_caps = MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT;
-    }
-#endif
-    config.task_caps = task_caps;
+    /* The httpd task stack must stay in internal RAM. Its handlers read NVS and
+     * FATFS, i.e. flash; flash access disables the cache, so a PSRAM-backed
+     * stack trips esp_task_stack_is_sane_cache_disabled() and reboots the board
+     * as soon as the provisioning UI asks for /api/config. */
+    config.task_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
 
     config.close_fn = http_server_close_fn;
     config.uri_match_fn = httpd_uri_match_wildcard;
