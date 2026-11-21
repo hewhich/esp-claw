@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 
 static void free_context_provider_storage(claw_core_state_t *core)
@@ -244,7 +245,26 @@ esp_err_t claw_core_start(claw_core_handle_t core)
                                     &core->task_handle);
 
     if (task_result != pdPASS) {
-        return ESP_FAIL;
+        ESP_LOGE(core->log_tag,
+                 "internal stack create failed: stack=%u free=%u largest=%u",
+                 (unsigned)core->task_stack_size,
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+        task_result = claw_task_create(&(claw_task_config_t){
+                                            .name = core->log_tag,
+                                            .stack_size = core->task_stack_size,
+                                            .priority = core->task_priority,
+                                            .core_id = core->task_core,
+                                            .stack_policy = CLAW_TASK_STACK_PREFER_PSRAM,
+                                        },
+                                        claw_core_agent_loop_task,
+                                        core,
+                                        &core->task_handle);
+        if (task_result != pdPASS) {
+            ESP_LOGE(core->log_tag, "psram stack create failed too");
+            return ESP_FAIL;
+        }
+        ESP_LOGW(core->log_tag, "agent stack fell back to PSRAM");
     }
 
     core->started = true;
