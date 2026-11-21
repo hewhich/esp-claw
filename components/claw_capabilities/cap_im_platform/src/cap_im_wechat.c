@@ -2201,7 +2201,7 @@ static esp_err_t cap_im_wechat_gateway_start(void)
                               .stack_size = 6144,
                               .priority = 5,
                               .core_id = tskNO_AFFINITY,
-                              .stack_policy = CLAW_TASK_STACK_PREFER_PSRAM,
+                              .stack_policy = CLAW_TASK_STACK_INTERNAL_ONLY,
                           },
                           cap_im_wechat_poll_task,
                           NULL,

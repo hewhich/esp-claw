@@ -96,14 +96,31 @@ BaseType_t claw_task_create(const claw_task_config_t *config,
            resolved.core_id,
            memory_caps == MALLOC_CAP_SPIRAM ? "SPIRAM" : "INTERNAL");
 
-    return xTaskCreatePinnedToCoreWithCaps(task_func,
-                                           resolved.name,
-                                           resolved.stack_size,
-                                           arg,
-                                           resolved.priority,
-                                           task_handle,
-                                           resolved.core_id,
-                                           memory_caps);
+    BaseType_t result = xTaskCreatePinnedToCoreWithCaps(task_func,
+                                                        resolved.name,
+                                                        resolved.stack_size,
+                                                        arg,
+                                                        resolved.priority,
+                                                        task_handle,
+                                                        resolved.core_id,
+                                                        memory_caps);
+    if (result != pdPASS && memory_caps == MALLOC_CAP_INTERNAL && claw_task_external_memory_available()) {
+        ESP_LOGE(TAG,
+                 "internal stack alloc failed for '%s' (%u bytes): free=%u largest=%u; retrying in PSRAM",
+                 resolved.name,
+                 (unsigned int)resolved.stack_size,
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+        result = xTaskCreatePinnedToCoreWithCaps(task_func,
+                                                 resolved.name,
+                                                 resolved.stack_size,
+                                                 arg,
+                                                 resolved.priority,
+                                                 task_handle,
+                                                 resolved.core_id,
+                                                 MALLOC_CAP_SPIRAM);
+    }
+    return result;
 }
 
 void claw_task_delete(TaskHandle_t task_handle)
