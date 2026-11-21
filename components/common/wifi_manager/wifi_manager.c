@@ -250,7 +250,7 @@ static esp_err_t configure_sta_mode(const wifi_manager_config_t *config)
         strlcpy((char *)sta_cfg.sta.password,
                 s_config.sta_password ? s_config.sta_password : "",
                 sizeof(sta_cfg.sta.password));
-        sta_cfg.sta.threshold.authmode = wifi_manager_sta_password_is_set() ? WIFI_AUTH_WPA2_PSK : WIFI_AUTH_OPEN;
+        sta_cfg.sta.threshold.authmode = wifi_manager_sta_password_is_set() ? WIFI_AUTH_WPA_PSK : WIFI_AUTH_OPEN;
         sta_cfg.sta.pmf_cfg.capable = true;
         sta_cfg.sta.pmf_cfg.required = false;
 
@@ -308,7 +308,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
             if (s_sta_configured) {
                 ESP_LOGI(TAG, "STA start: ssid_len=%u auth_threshold=%s mode=%s",
                          (unsigned)strlen(s_config.sta_ssid),
-                         wifi_manager_sta_password_is_set() ? "wpa2_psk" : "open",
+                         wifi_manager_sta_password_is_set() ? "wpa_psk" : "open",
                          wifi_manager_mode_string(s_mode));
                 esp_wifi_connect();
             } else {
