@@ -234,7 +234,10 @@ esp_err_t claw_core_start(claw_core_handle_t core)
                                         .stack_size = core->task_stack_size,
                                         .priority = core->task_priority,
                                         .core_id = core->task_core,
-                                        .stack_policy = CLAW_TASK_STACK_PREFER_PSRAM,
+                                        /* Agent loop reads NVS/FATFS, which disables the flash
+                                           cache; a PSRAM stack trips
+                                           esp_task_stack_is_sane_cache_disabled(). Keep it internal. */
+                                        .stack_policy = CLAW_TASK_STACK_INTERNAL_ONLY,
                                     },
                                     claw_core_agent_loop_task,
                                     core,

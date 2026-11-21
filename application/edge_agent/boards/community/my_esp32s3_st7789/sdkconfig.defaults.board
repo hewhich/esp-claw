@@ -16,7 +16,7 @@ CONFIG_SPIRAM_SPEED_80M=y
 CONFIG_SPIRAM_USE_MALLOC=y
 # Only sub-512B chunks (kernel objects, tiny structs) stay in internal RAM;
 # everything else prefers PSRAM so the 8MB is actually used.
-CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=512
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=128
 # Keep a smaller pool held back for DMA-only allocations: 32KB starved the
 # general internal heap once skills/apps/capabilities were loaded.
 CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=16384
