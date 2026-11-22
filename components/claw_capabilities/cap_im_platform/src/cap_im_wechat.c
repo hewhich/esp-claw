@@ -1618,12 +1618,19 @@ static esp_err_t cap_im_wechat_poll_once(void)
 static void cap_im_wechat_poll_task(void *arg)
 {
     (void)arg;
+    bool warned_unconfigured = false;
 
+    ESP_LOGI(TAG, "wechat poll loop running configured=%d", (int)s_wechat.configured);
     while (!s_wechat.stop_requested) {
         if (!s_wechat.configured) {
+            if (!warned_unconfigured) {
+                ESP_LOGW(TAG, "wechat gateway idle: token/base_url not configured");
+                warned_unconfigured = true;
+            }
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
+        warned_unconfigured = false;
 
         if (cap_im_wechat_poll_once() != ESP_OK) {
             ESP_LOGW(TAG, "WeChat polling failed, retrying");
@@ -2198,7 +2205,7 @@ static esp_err_t cap_im_wechat_gateway_start(void)
     s_wechat.stop_requested = false;
     ok = claw_task_create(&(claw_task_config_t){
                               .name = "wechat_poll",
-                              .stack_size = 6144,
+                              .stack_size = 10240,
                               .priority = 5,
                               .core_id = tskNO_AFFINITY,
                               .stack_policy = CLAW_TASK_STACK_INTERNAL_ONLY,
@@ -2208,8 +2215,11 @@ static esp_err_t cap_im_wechat_gateway_start(void)
                           &s_wechat.poll_task);
     if (ok != pdPASS) {
         s_wechat.poll_task = NULL;
+        ESP_LOGE(TAG, "wechat poll task create failed");
         return ESP_FAIL;
     }
+    ESP_LOGI(TAG, "wechat poll task started configured=%d token=%s",
+             (int)s_wechat.configured, s_wechat.token[0] ? "set" : "missing");
 
     return ESP_OK;
 }
