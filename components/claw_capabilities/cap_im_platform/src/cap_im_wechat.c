@@ -1478,6 +1478,7 @@ static esp_err_t cap_im_wechat_process_message(cJSON *msg)
              cap_im_wechat_int64_value(cJSON_GetObjectItemCaseSensitive(msg, "message_id"),
                                        cap_im_wechat_now_ms()));
     if (cap_im_wechat_dedup_check_and_record(message_id_buf)) {
+        ESP_LOGW(TAG, "wechat msg dedup skip id=%s", message_id_buf);
         free(text_buf);
         return ESP_OK;
     }
@@ -1486,6 +1487,29 @@ static esp_err_t cap_im_wechat_process_message(cJSON *msg)
 
     item_list = cap_im_wechat_require_array(msg, "item_list");
     if (!item_list) {
+        const char *top_text =
+            cap_im_wechat_string_value(cJSON_GetObjectItemCaseSensitive(msg, "text"));
+        cJSON *text_item = cJSON_GetObjectItemCaseSensitive(msg, "text_item");
+        const char *ti_text = NULL;
+
+        if (cJSON_IsObject(text_item)) {
+            ti_text = cap_im_wechat_string_value(
+                          cJSON_GetObjectItemCaseSensitive(text_item, "text"));
+        }
+        ESP_LOGW(TAG, "wechat msg no item_list id=%s top_text=%s text_item=%s",
+                 message_id_buf,
+                 top_text ? "yes" : "no",
+                 ti_text ? "yes" : "no");
+        if (top_text) {
+            cap_im_wechat_append_text(text_buf, CAP_IM_WECHAT_MAX_MSG_LEN + 1, top_text);
+            if (text_buf[0]) {
+                esp_err_t fb_err = cap_im_wechat_publish_inbound_text(chat_id,
+                                                                      from_user_id ? from_user_id : chat_id,
+                                                                      message_id_buf,
+                                                                      text_buf);
+                ESP_LOGW(TAG, "wechat msg fallback text publish err=%s", esp_err_to_name(fb_err));
+            }
+        }
         free(text_buf);
         return ESP_OK;
     }
@@ -1514,10 +1538,17 @@ static esp_err_t cap_im_wechat_process_message(cJSON *msg)
     }
 
     {
-        esp_err_t err = cap_im_wechat_publish_inbound_text(chat_id,
-                                                           from_user_id ? from_user_id : chat_id,
-                                                           message_id_buf,
-                                                           text_buf);
+        esp_err_t err;
+
+        ESP_LOGI(TAG, "wechat msg id=%s chat=%s items=%d text_len=%u",
+                 message_id_buf, chat_id, item_count, (unsigned)strlen(text_buf));
+        err = cap_im_wechat_publish_inbound_text(chat_id,
+                                                 from_user_id ? from_user_id : chat_id,
+                                                 message_id_buf,
+                                                 text_buf);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "wechat msg publish failed id=%s err=%s", message_id_buf, esp_err_to_name(err));
+        }
         free(text_buf);
         return err;
     }
@@ -1548,9 +1579,12 @@ static esp_err_t cap_im_wechat_poll_once(void)
         return err;
     }
 
+    /* Keep the client timeout well beyond the server long-poll window so a
+     * teardown does not race with an incoming message (which would lose it,
+     * because the server advances the sync cursor on every poll). */
     err = cap_im_wechat_api_post("ilink/bot/getupdates",
                                  root,
-                                 s_wechat.poll_timeout_ms + 5000,
+                                 s_wechat.poll_timeout_ms + 20000,
                                  &response);
     cJSON_Delete(root);
     if (err != ESP_OK) {
@@ -1606,6 +1640,9 @@ static esp_err_t cap_im_wechat_poll_once(void)
     }
 
     msg_count = cJSON_GetArraySize(msgs);
+    if (msg_count > 0) {
+        ESP_LOGI(TAG, "getupdates msgs=%d", msg_count);
+    }
     for (i = 0; i < msg_count; i++) {
         msg = cJSON_GetArrayItem(msgs, i);
         cap_im_wechat_process_message(msg);
