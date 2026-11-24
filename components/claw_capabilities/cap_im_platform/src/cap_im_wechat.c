@@ -740,6 +740,42 @@ static esp_err_t cap_im_wechat_add_base_info(cJSON *root)
     return ESP_OK;
 }
 
+static esp_err_t cap_im_wechat_set_presence(bool online)
+{
+    cJSON *root = NULL;
+    cap_im_wechat_http_resp_t response = {0};
+    esp_err_t err;
+
+    if (!s_wechat.configured) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    root = cJSON_CreateObject();
+    if (!root) {
+        return ESP_ERR_NO_MEM;
+    }
+    err = cap_im_wechat_add_base_info(root);
+    if (err != ESP_OK) {
+        cJSON_Delete(root);
+        return err;
+    }
+
+    err = cap_im_wechat_api_post(online ? "ilink/bot/msg/notifystart" : "ilink/bot/msg/notifystop",
+                                 root, 10000, &response);
+    cJSON_Delete(root);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "wechat presence notify %s resp=%s",
+                 online ? "start" : "stop",
+                 response.buf ? response.buf : "(null)");
+    } else {
+        ESP_LOGW(TAG, "wechat presence notify %s failed: %s",
+                 online ? "start" : "stop",
+                 esp_err_to_name(err));
+    }
+    cap_im_wechat_resp_cleanup(&response);
+    return err;
+}
+
 static esp_err_t cap_im_wechat_publish_inbound_text(const char *chat_id,
                                                     const char *sender_id,
                                                     const char *message_id,
@@ -1658,6 +1694,11 @@ static void cap_im_wechat_poll_task(void *arg)
     bool warned_unconfigured = false;
 
     ESP_LOGI(TAG, "wechat poll loop running configured=%d", (int)s_wechat.configured);
+    if (s_wechat.configured) {
+        /* Announce presence so the WeChat side routes messages to this bot
+         * instance instead of treating it as offline. */
+        cap_im_wechat_set_presence(true);
+    }
     while (!s_wechat.stop_requested) {
         if (!s_wechat.configured) {
             if (!warned_unconfigured) {
@@ -1675,6 +1716,7 @@ static void cap_im_wechat_poll_task(void *arg)
         }
     }
 
+    cap_im_wechat_set_presence(false);
     s_wechat.poll_task = NULL;
     claw_task_delete(NULL);
 }
