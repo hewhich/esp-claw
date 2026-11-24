@@ -204,6 +204,7 @@ void claw_core_agent_loop_task(void *arg)
                          esp_err_to_name(err));
             }
         }
+        claw_core_stage_mark_start();
 
         {
             const char *user_texts[1] = {request.view.user_text};
@@ -488,6 +489,17 @@ finish_request:
                                                           persist_err);
                     free(failure_trace);
                 }
+            }
+        }
+        if (err == ESP_OK && response.view.text && response.view.text[0]) {
+            char *timed = malloc(strlen(response.view.text) + 48);
+            if (timed) {
+                snprintf(timed, strlen(response.view.text) + 48,
+                         "⏱ 用时 %" PRIu32 "s｜%" PRIu32 " 轮工具调用\n\n%s",
+                         claw_core_stage_elapsed_s(), iteration,
+                         response.view.text);
+                free(response.view.text);
+                response.view.text = timed;
             }
         }
         claw_core_publish_out_message_if_requested(&request, &response);

@@ -19,6 +19,22 @@ static const char *TAG = "claw_core";
 
 #define CLAW_CORE_STAGE_REASONING_SNIPPET_LEN 150
 
+static int64_t s_stage_ref_ms;
+
+void claw_core_stage_mark_start(void)
+{
+    s_stage_ref_ms = claw_utils_time_now_ms();
+}
+
+uint32_t claw_core_stage_elapsed_s(void)
+{
+    int64_t now_ms = claw_utils_time_now_ms();
+    if (s_stage_ref_ms <= 0 || now_ms <= s_stage_ref_ms) {
+        return 0;
+    }
+    return (uint32_t)((now_ms - s_stage_ref_ms) / 1000);
+}
+
 static esp_err_t build_response_payload_json(const claw_core_request_t *request,
                                              const claw_core_response_t *response,
                                              char **out_payload_json)
@@ -187,6 +203,7 @@ esp_err_t claw_core_publish_stage_text(const claw_core_request_t *request, const
 {
     claw_event_t event = {0};
     char payload_json[96];
+    char staged_text[512];
     int64_t now_ms;
     esp_err_t err;
 
@@ -195,6 +212,11 @@ esp_err_t claw_core_publish_stage_text(const claw_core_request_t *request, const
     }
     if (!(request->flags & CLAW_CORE_REQUEST_FLAG_PUBLISH_STAGE_MESSAGE)) {
         return ESP_OK;
+    }
+
+    if (snprintf(staged_text, sizeof(staged_text), "🦞 [%" PRIu32 "s] %s",
+                 claw_core_stage_elapsed_s(), text) < 0) {
+        return ESP_ERR_NO_MEM;
     }
 
     now_ms = claw_utils_time_now_ms();
@@ -207,7 +229,7 @@ esp_err_t claw_core_publish_stage_text(const claw_core_request_t *request, const
             request->target_channel : request->source_channel,
         (request->target_chat_id && request->target_chat_id[0]) ?
             request->target_chat_id : request->source_chat_id,
-        text,
+        staged_text,
         &event);
     if (err != ESP_OK) {
         return err;
@@ -240,9 +262,8 @@ void claw_core_publish_stage_tool_calls(const claw_core_request_t *request,
                                         const claw_core_llm_response_t *response,
                                         uint32_t iteration)
 {
-#if CONFIG_CLAW_CORE_STAGE_VERBOSITY_VERBOSE
     char buf[256];
-    size_t off = 0;
+    size_t off;
     size_t i;
     int written;
 
@@ -253,12 +274,10 @@ void claw_core_publish_stage_tool_calls(const claw_core_request_t *request,
     if (response->reasoning_content && response->reasoning_content[0]) {
         size_t reasoning_len = strlen(response->reasoning_content);
         size_t prefix_len = claw_utils_utf8_prefix_len(response->reasoning_content,
-                                                 CLAW_CORE_STAGE_REASONING_SNIPPET_LEN);
+                                                      CLAW_CORE_STAGE_REASONING_SNIPPET_LEN);
 
-        written = snprintf(buf, sizeof(buf), "🦞 [Round %" PRIu32 "] %.*s%s",
-                           iteration + 1,
-                           (int)prefix_len,
-                           response->reasoning_content,
+        written = snprintf(buf, sizeof(buf), "第%" PRIu32 "轮 思考：%.*s%s",
+                           iteration + 1, (int)prefix_len, response->reasoning_content,
                            reasoning_len > prefix_len ? "..." : "");
         if (written < 0 || (size_t)written >= sizeof(buf)) {
             return;
@@ -271,7 +290,7 @@ void claw_core_publish_stage_tool_calls(const claw_core_request_t *request,
         return;
     }
 
-    written = snprintf(buf, sizeof(buf), "🦞 [Round %" PRIu32 "] Snap: ", iteration + 1);
+    written = snprintf(buf, sizeof(buf), "第%" PRIu32 "轮 调用：", iteration + 1);
     if (written < 0 || (size_t)written >= sizeof(buf)) {
         return;
     }
@@ -279,7 +298,11 @@ void claw_core_publish_stage_tool_calls(const claw_core_request_t *request,
 
     for (i = 0; i < response->tool_call_count; i++) {
         const char *name = response->tool_calls[i].name ? response->tool_calls[i].name : "?";
+#if CONFIG_CLAW_CORE_STAGE_VERBOSITY_VERBOSE
         const char *args = response->tool_calls[i].arguments_json;
+#else
+        const char *args = NULL;
+#endif
         if (args && args[0]) {
             size_t arg_len = strlen(args);
             size_t prefix_len = claw_utils_utf8_prefix_len(args, 40);
@@ -297,11 +320,6 @@ void claw_core_publish_stage_tool_calls(const claw_core_request_t *request,
     }
 
     (void)claw_core_publish_stage_text(request, buf);
-#else
-    (void)request;
-    (void)response;
-    (void)iteration;
-#endif
 }
 
 void claw_core_publish_stage_note_for_round(claw_core_state_t *core,
@@ -322,24 +340,12 @@ void claw_core_publish_stage_note_for_round(claw_core_state_t *core,
         return;
     }
 
-#if CONFIG_CLAW_CORE_STAGE_VERBOSITY_VERBOSE
-    char buf[256];
-    int written;
-
-    if (!stage_note || !stage_note[0]) {
-        free(stage_note);
-        return;
+    if (stage_note && stage_note[0]) {
+        char buf[256];
+        int written = snprintf(buf, sizeof(buf), "第%" PRIu32 "轮 %s", round_index + 1, stage_note);
+        if (written > 0 && (size_t)written < sizeof(buf)) {
+            (void)claw_core_publish_stage_text(request, buf);
+        }
     }
-
-    written = snprintf(buf, sizeof(buf), "🦞 [Round %" PRIu32 "] %s", round_index + 1, stage_note);
-    if (written < 0 || (size_t)written >= sizeof(buf)) {
-        free(stage_note);
-        return;
-    }
-    (void)claw_core_publish_stage_text(request, buf);
-#else
-    (void)request;
-    (void)round_index;
-#endif
     free(stage_note);
 }

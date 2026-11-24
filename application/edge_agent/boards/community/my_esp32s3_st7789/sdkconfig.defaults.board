@@ -78,3 +78,8 @@ CONFIG_ESP_MAIN_TASK_STACK_SIZE=32768
 # internal RAM: mbedtls_ssl_handshake failed with varying mbedtls errors as soon
 # as the internal heap dipped. Put mbedtls allocations in PSRAM instead.
 CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=y
+
+# IM users want to see what the agent is doing while it runs: forward the
+# per-round reasoning snippet / tool names with elapsed time, not just the
+# final answer.
+CONFIG_CLAW_CORE_STAGE_VERBOSITY_VERBOSE=y

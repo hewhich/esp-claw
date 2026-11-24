@@ -223,6 +223,7 @@ claw_core_agent_loop_phase_t claw_core_control_get_phase(claw_core_state_t *core
 
 void claw_core_publish_out_message_if_requested(const claw_core_request_item_t *request,
                                                 const claw_core_response_item_t *response);
+uint32_t claw_core_stage_elapsed_s(void);
 void claw_core_publish_stage_tool_calls(const claw_core_request_t *request,
                                         const claw_core_llm_response_t *response,
                                         uint32_t iteration);

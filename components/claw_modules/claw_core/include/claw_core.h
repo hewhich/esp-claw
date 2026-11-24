@@ -209,6 +209,8 @@ esp_err_t claw_core_add_completion_observer(claw_core_handle_t core,
                                             claw_core_completion_observer_fn observer,
                                             void *user_ctx);
 esp_err_t claw_core_publish_stage_text(const claw_core_request_t *request, const char *text);
+/** Record the run start time so IM stage/final messages can report elapsed time. */
+void claw_core_stage_mark_start(void);
 /** Queue an explicitly independent Agent run. */
 esp_err_t claw_core_start_run(claw_core_handle_t core,
                               const claw_core_request_t *request,
